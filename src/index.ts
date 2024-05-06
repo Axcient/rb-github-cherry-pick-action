@@ -39,7 +39,13 @@ async function run(): Promise<void> {
       return
     }
 
+    const originalLabels = [...inputs.labels]
+    const originalDraft = pull_request.draft
+
     for (const branch of branches) {
+      inputs.labels = [...originalLabels]
+      inputs.draft = originalDraft
+
       core.info(`Cherry pick into branch ${branch}!`)
 
       const prBranch = exportFunctions.getPrBranchName(inputs, branch, githubSha)

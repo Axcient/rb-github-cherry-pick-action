@@ -30299,7 +30299,8 @@ function createPullRequest(inputs, prBranch, branch) {
                 head: prBranch,
                 base: branch,
                 title,
-                body
+                body,
+                draft: inputs.draft
             });
             // Apply labels
             const appliedLabels = inputs.labels;
@@ -30423,6 +30424,9 @@ function cherryPick(inputs, githubSha) {
             // commit the unresolved files and continue the cherry-pick
             yield exportFunctions.gitExecution(['add', '.']);
             yield exportFunctions.gitExecution(['commit', '-m', 'leave conflicts unresolved']);
+            // add conflict label
+            inputs.labels.push('conflict');
+            inputs.draft = true;
         }
         else if (result.exitCode !== 0 && !result.stderr.includes(exports.CHERRYPICK_EMPTY)) {
             throw new Error(`Unexpected error: ${result.stderr}`);
@@ -30554,7 +30558,11 @@ function run() {
                 console.log('No branches to cherry pick into');
                 return;
             }
+            const originalLabels = [...inputs.labels];
+            const originalDraft = pull_request.draft;
             for (const branch of branches) {
+                inputs.labels = [...originalLabels];
+                inputs.draft = originalDraft;
                 core.info(`Cherry pick into branch ${branch}!`);
                 const prBranch = exportFunctions.getPrBranchName(inputs, branch, githubSha);
                 yield exportFunctions.createNewBranch(prBranch, branch);
